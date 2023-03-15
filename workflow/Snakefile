@@ -17,8 +17,8 @@ SAMPLES = glob_wildcards("data/{sample}_R1_001.fastq.gz")
 # - MGE database and BAM files for mapping
 rule all:
 	input:
-		#expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
 		#expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+        #expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),		
 		#"data/multiqc_report.html",
 		#"trimmed_data/multiqc_report.html",
 		#expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
@@ -41,25 +41,24 @@ rule all:
 # The input files are located in the "data" directory and have the pattern:
 # {sample}_{read}_001.fastq.gz
 # The output files are written to the "data/FASTQC" directory
-
 rule fastqc_raw:
-	input:
-		"data/{sample}_{read}_001.fastq.gz"
-	output:
-		"data/FASTQC/{sample}_{read}_001_fastqc.zip"
-	message:
-		"-- Quality check of raw data with Fastqc --"
-	conda:
-		"envs/QC_env.yml"
-	threads:
-		2
-	shell:
+    input:
+        "data/{sample}_{read}_001.fastq.gz"
+    output:
+        "data/FASTQC/{sample}_{read}_001_fastqc.zip"
+    message:
+        "-- Quality check of raw data with Fastqc --"
+    conda:
+        "envs/QC_env.yml"
+    threads:
+        2
+    shell:
         "fastqc --quiet -t {threads} --outdir data/FASTQC -f fastq {input}"
 
 # Rule to run MultiQC on raw data
 rule multiqc_raw:
 	input:
-		# Path to input files for each sample and read
+        # Path to input files for each sample and read
 		expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"])
 	output:
 		# Path to MultiQC output report
@@ -73,9 +72,8 @@ rule multiqc_raw:
 	threads:
 		# Number of threads to be used for the rule
 		1
-	shell:
-		# Shell command to be run for the rule
-		"multiqc -f --interactive --quiet data/ -o data/"
+	shell: "multiqc -f --interactive --quiet data/ -o data/"
+		# Shell command to be run for the rule		
 
 # Rule to run Cutadapt for adapter trimming
 rule cutadapt:
@@ -221,15 +219,16 @@ rule resfinder_filtering:
         "-- Filtering reads before sorting --" # A message to display while the rule is running
     conda:
         "envs/bowtie2.yml"
-	threads:
-		1
-	shell:
-		"""
+    threads:
+        1
+    shell:
+        """
         samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
         {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
         else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
         | samtools view -Shu - > {output}
         """
+
 rule resfinder_sorting:
 	input:
 		"mapped_reads/{sample}.bam"
@@ -292,7 +291,7 @@ rule combine_results_2:
 
 rule combine_results_3:
     input:
-        resfinder_out/{sample}_counts"
+        "resfinder_out/{sample}_counts"
     output:
         temp("resfinder_out/renamed_{sample}_counts")
     message:
@@ -336,19 +335,19 @@ rule MGE_mapping:
         indexed_db= "MGE_db/MGE.1.bt2"
     output:
         temp("mapped_reads_MGE/{sample}_unfiltered.bam")
-        log:
-            "logs/MGE/{sample}.log"
-        message:
-            "-- Mapping w/ MGEs --"
-        conda:
-            "envs/bowtie2.yml"
-        threads:
-            6
-        shell:
-            """
-            (bowtie2 -x MGE_db/MGE -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
-            samtools view -Sb - > {output}) 2> {log}
-            """
+    log:
+        "logs/MGE/{sample}.log"
+    message:
+        "-- Mapping w/ MGEs --"
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        6
+    shell:
+        """
+        (bowtie2 -x MGE_db/MGE -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
+        samtools view -Sb - > {output}) 2> {log}
+        """
 
 rule MGE_filtering:
     input:

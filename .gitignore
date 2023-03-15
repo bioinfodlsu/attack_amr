@@ -1,2 +1,3 @@
-data/
+workflow/data/
+workflow/trimmed_data/
 workflow/.snakemake/
