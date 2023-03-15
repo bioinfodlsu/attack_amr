@@ -1,0 +1,457 @@
+# Define the input files for each sample using glob_wildcards
+# The input files are located in the "data" directory and have the pattern:
+# {sample}_R1_001.fastq.gz
+# The pattern is used to extract the sample name and store it in the "SAMPLES" variable
+SAMPLES = glob_wildcards("data/{sample}_R1_001.fastq.gz")
+
+# Define the output files for the pipeline
+# The output files include:
+# - FastQC reports for the raw and trimmed reads (one per sample and read)
+# - MultiQC reports for the raw and trimmed reads (one per dataset)
+# - Metaphlan3 profiles and Bowtie2 outputs (one per sample)
+# - Merged abundance table for all Metaphlan3 profiles
+# - Resfinder database
+# - Trimmed reads (one per sample and read)
+# - Unfiltered BAM files and Bowtie2 logs for mapping
+# - Sorted BAM files and BAI files for mapping
+# - MGE database and BAM files for mapping
+rule all:
+	input:
+		#expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+		#expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+		#"data/multiqc_report.html",
+		#"trimmed_data/multiqc_report.html",
+		#expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+		#"metaphlan3/merged_abundance_table.txt",
+		#"resfinder_db/resfinder.1.bt2",
+		#expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz", sample=SAMPLES, read=["R1", "R2"]),
+		#expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
+		#expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
+		#expand("sorted_reads/{sample}.bam", sample=SAMPLES),
+		#expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
+		#"resfinder_out/ARG_genemat.txt",
+		#"MGE_db/MGE.1.bt2",
+                #expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
+                #expand("logs/MGE/{sample}.log", sample=SAMPLES),
+                #expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
+                #expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
+                #"MGE_out/MGE_genemat.txt"
+
+# Rule to run FastQC on the raw reads for each sample and read
+# The input files are located in the "data" directory and have the pattern:
+# {sample}_{read}_001.fastq.gz
+# The output files are written to the "data/FASTQC" directory
+
+rule fastqc_raw:
+	input:
+		"data/{sample}_{read}_001.fastq.gz"
+	output:
+		"data/FASTQC/{sample}_{read}_001_fastqc.zip"
+	message:
+		"-- Quality check of raw data with Fastqc --"
+	conda:
+		"envs/QC_env.yml"
+	threads:
+		2
+	shell:
+        "fastqc --quiet -t {threads} --outdir data/FASTQC -f fastq {input}"
+
+# Rule to run MultiQC on raw data
+rule multiqc_raw:
+	input:
+		# Path to input files for each sample and read
+		expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"])
+	output:
+		# Path to MultiQC output report
+		"data/multiqc_report.html"
+	message:
+		# Message to be displayed when rule is run
+		"-- Running MultiQC for raw data --"
+	conda:
+		# Conda environment to be activated before running rule
+		"envs/QC_env.yml"
+	threads:
+		# Number of threads to be used for the rule
+		1
+	shell:
+		# Shell command to be run for the rule
+		"multiqc -f --interactive --quiet data/ -o data/"
+
+# Rule to run Cutadapt for adapter trimming
+rule cutadapt:
+	input:
+		# Path to forward and reverse read files for each sample
+		fw= "data/{sample}_R1_001.fastq.gz",
+		rv= "data/{sample}_R2_001.fastq.gz"
+	output:
+		# Path to trimmed output files and log file for each sample
+		fw= "trimmed_data/{sample}_R1_trimmed.fastq.gz",
+		rv= "trimmed_data/{sample}_R2_trimmed.fastq.gz",
+		log= "trimmed_data/{sample}.trimmed.txt"
+	message:
+		# Message to be displayed when rule is run
+		"-- Running Cutadapt --"
+	conda:
+		# Conda environment to be activated before running rule
+		"envs/cutadapt.yml"
+	threads:
+		# Number of threads to be used for the rule
+		1
+	shell:
+		# Shell command to be run for the rule
+		"cutadapt -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -O 10 -m 30 -q 20 \
+        {input.fw} {input.rv} -o {output.fw} -p {output.rv} > {output.log}"
+
+# Rule to run FastQC on trimmed data
+rule fastqc_trim:
+	input:
+		# Path to input trimmed read files for each sample and read
+		"trimmed_data/{sample}_{read}_trimmed.fastq.gz"
+	output:
+		# Path to FastQC output report for each sample and read
+		"trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip"
+	message:
+		# Message to be displayed when rule is run
+		"-- Quality check of trimmed data with Fastqc --"
+	conda:
+		# Conda environment to be activated before running rule
+		"envs/QC_env.yml"
+	threads:
+		# Number of threads to be used for the rule
+		2
+	shell:
+		# Shell command to be run for the rule
+		"fastqc --quiet -t {threads} --outdir trimmed_data/FASTQC -f fastq {input}"
+
+# Rule to run MultiQC on trimmed data
+rule multiqc_trim:
+	input:
+		# Path to input FastQC files for each sample and read
+		expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"])
+	output:
+		# Path to MultiQC output report for trimmed data
+		"trimmed_data/multiqc_report.html"
+	message:
+		"-- Running MultiQC for trimmed data--"
+	conda:
+		"envs/QC_env.yml"
+	shell:
+		"multiqc -f --interactive --quiet trimmed_data/ -o trimmed_data/"
+
+# Define the rule for running Metaphlan3
+rule metaphlan3:
+    input:
+        reads="trimmed_data/{sample}_R1_trimmed.fastq.gz"
+    output:
+        file="metaphlan3/{sample}_profile.txt",
+        bowtie2out="metaphlan3/{sample}.bowtie2.bz2"
+    message:
+        "-- Running Metaphlan3 --" # A message to display while the rule is running
+    conda:
+        "envs/humann3.yml"
+    threads:
+        2
+    shell:
+        # Install Metaphlan3 if needed
+        # metaphlan --install
+        # Run Metaphlan3
+        "metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+
+# Define the rule for merging Metaphlan3 results
+rule metaphlan3_merge:
+    input:
+        expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES)
+    output:
+        "metaphlan3/merged_abundance_table.txt"
+    message:
+        "-- Merging Metaphlan3 results into table --" # A message to display while the rule is running
+    conda:
+        "envs/humann3.yml"
+    threads:
+        1
+    shell:
+        # Merge Metaphlan3 results into a single table
+        "merge_metaphlan_tables.py {input} > {output}"
+
+# Define the rule for creating the ResFinder database
+rule resfinder_db:
+    input:
+        fasta= "resfinder_db/resfinder.fasta"
+    output:
+        indexed_db= "resfinder_db/resfinder.1.bt2"
+    message:
+        "-- Creating ResFinder database --" # A message to display while the rule is running
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        1
+    shell:
+        # Create the ResFinder database
+        "bowtie2-build {input.fasta} resfinder_db/resfinder"
+
+# Define the rule for mapping reads to the ResFinder database
+rule resfinder_mapping:
+    input:
+        fw= "trimmed_data/{sample}_R1_trimmed.fastq.gz",
+        rv= "trimmed_data/{sample}_R2_trimmed.fastq.gz",
+        indexed_db= "resfinder_db/resfinder.1.bt2"
+    output:
+        "mapped_reads/{sample}_unfiltered.bam"
+    log:
+        "logs/bowtie2/{sample}.log"
+    message:
+        "-- Mapping reads to ResFinder database and extracting mapped reads --" # A message to display while the rule is running
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        1
+    shell:
+        """
+        (bowtie2 -x resfinder_db/resfinder -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
+        samtools view -Sb - > {output}) 2> {log}
+        """
+
+# Define the rule for filtering reads before sorting
+rule resfinder_filtering:
+    input:
+        "mapped_reads/{sample}_unfiltered.bam"
+    output:
+        temp("mapped_reads/{sample}.bam")
+    message:
+        "-- Filtering reads before sorting --" # A message to display while the rule is running
+    conda:
+        "envs/bowtie2.yml"
+	threads:
+		1
+	shell:
+		"""
+        samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
+        {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
+        else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
+        | samtools view -Shu - > {output}
+        """
+rule resfinder_sorting:
+	input:
+		"mapped_reads/{sample}.bam"
+	output:
+		"sorted_reads/{sample}.bam"
+	message:
+		"-- Sorting reads --"
+	conda:
+		"envs/bowtie2.yml"
+	threads:
+		1
+	shell:
+		"samtools sort -T sorted_reads/{wildcards.sample} "
+		"-O bam {input} > {output}"
+
+rule resfinder_indexing:
+	input:
+		"sorted_reads/{sample}.bam"
+	output:
+		"sorted_reads/{sample}.bam.bai"
+	message:
+		"-- Indexing mapped reads --" 	
+	conda:
+		"envs/bowtie2.yml"      
+	threads:
+		1
+	shell:
+		"samtools index {input}"
+
+rule combine_results_1:
+	input:
+		"sorted_reads/BFH1_S123.bam"
+	output:
+		temp("resfinder_out/gene_names")
+	message:
+		"-- Creating gene_names file --"
+	conda:
+		"envs/bowtie2.yml"
+	threads:
+		1
+	shell:
+		"""
+		samtools idxstats {input} | grep -v "\*" | cut -f1 > {output}
+		sed -i '1 i\GENE' {output}
+		"""
+
+rule combine_results_2:
+	input:
+		"sorted_reads/{sample}.bam"
+	output:
+		"resfinder_out/{sample}_counts"
+	message:
+		"-- Combine count data into genemat --"
+	conda:
+		"envs/bowtie2.yml"
+	threads:
+		1
+	shell:
+		'samtools idxstats {input} | grep -v "\*" | cut -f3 > {output}'
+
+rule combine_results_3:
+    input:
+        resfinder_out/{sample}_counts"
+    output:
+        temp("resfinder_out/renamed_{sample}_counts")
+    message:
+        "-- Adding sample names --"
+    threads:
+        1
+    shell:
+        "sed '1 i\{wildcards.sample}' {input} > {output}"
+
+rule combine_results_4:
+    input:
+        gene_names= "resfinder_out/gene_names",
+        counts= expand("resfinder_out/renamed_{sample}_counts", sample=SAMPLES)
+    output:
+        "resfinder_out/ARG_genemat.txt" 
+    message:
+        "-- Creating ARG_genemat --"
+    threads:
+        1
+    shell:
+        "paste {input.gene_names} {input.counts} > {output}"
+
+rule MGE_db:
+    input:
+        fasta= "MGE_db/MGE.fasta"
+    output:
+        indexed_db= "MGE_db/MGE.1.bt2"
+    message:
+        "-- MGE db --"
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        1
+    shell:
+            "bowtie2-build {input.fasta} MGE_db/MGE"
+
+rule MGE_mapping:
+    input:
+        fw= "trimmed_data/{sample}_R1_trimmed.fastq.gz",
+        rv= "trimmed_data/{sample}_R2_trimmed.fastq.gz",
+        indexed_db= "MGE_db/MGE.1.bt2"
+    output:
+        temp("mapped_reads_MGE/{sample}_unfiltered.bam")
+        log:
+            "logs/MGE/{sample}.log"
+        message:
+            "-- Mapping w/ MGEs --"
+        conda:
+            "envs/bowtie2.yml"
+        threads:
+            6
+        shell:
+            """
+            (bowtie2 -x MGE_db/MGE -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
+            samtools view -Sb - > {output}) 2> {log}
+            """
+
+rule MGE_filtering:
+    input:
+        "mapped_reads_MGE/{sample}_unfiltered.bam"
+    output:
+        temp("mapped_reads_MGE/{sample}.bam")
+    message:
+        "-- Filtering reads for sorting --"
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        6
+    shell:
+        """
+        samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
+        {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
+        else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
+        | samtools view -Shu - > {output}
+        """
+
+rule MGE_sorting:
+    input:
+        "mapped_reads_MGE/{sample}.bam"
+    output:
+        "sorted_reads_MGE/{sample}.bam"
+    message:
+        "-- Sorting reads --"
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        6
+    shell:
+        "samtools sort -T sorted_reads_MGE/{wildcards.sample} "
+        "-O bam {input} > {output}"
+
+rule MGE_indexing:
+    input:
+        "sorted_reads_MGE/{sample}.bam"
+    output:
+        "sorted_reads_MGE/{sample}.bam.bai"
+    message:
+        "-- Indexing mapped reads --"   
+    conda:
+        "envs/bowtie2.yml"      
+    threads:
+        6
+    shell:
+        "samtools index {input}"
+
+rule combine_MGE_results_1:
+    input:
+        "sorted_reads_MGE/BFH1_S123.bam"
+    output:
+        temp("MGE_out/gene_names")
+    message:
+        "-- Creating gene_names file --"
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        1
+    shell:
+        """
+        samtools idxstats {input} | grep -v "\*" | cut -f1 > {output}
+        sed -i '1 i\GENE' {output}
+        """
+
+rule combine_MGE_results_2:
+    input:
+        "sorted_reads_MGE/{sample}.bam"
+    output:
+        "MGE_out/{sample}_counts"
+    message:
+        "-- Combine count data into genemat --"
+    conda:
+        "envs/bowtie2.yml"
+    threads:
+        1
+    shell:
+        """
+        samtools idxstats {input} | grep -v "\*" | cut -f3 > {output}
+        """
+
+rule combine_MGE_results_3:
+    input:
+        "MGE_out/{sample}_counts"
+    output:
+        temp("MGE_out/renamed_{sample}_counts")
+    message:
+        "-- Adding sample names --"
+    threads:
+        1
+    shell:
+        "sed '1 i\{wildcards.sample}' {input} > {output}"
+
+rule combine_MGE_results_4:
+    input:
+        gene_names= "MGE_out/gene_names",
+        counts= expand("MGE_out/renamed_{sample}_counts", sample=SAMPLES)
+    output:
+        "MGE_out/MGE_genemat.txt" 
+    message:
+        "-- Creating MGE_genemat --"
+    threads:
+        1
+    shell:
+        "paste {input.gene_names} {input.counts} > {output}"
