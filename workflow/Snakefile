@@ -16,13 +16,13 @@ SAMPLES, = glob_wildcards("data/{sample}_R1_001.fastq.gz")
 # - Sorted BAM files and BAI files for mapping
 # - MGE database and BAM files for mapping
 rule all:
-	input:
-		expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
-        #expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),		
-		#"data/multiqc_report.html",
-		#"trimmed_data/multiqc_report.html",
-		#expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-		#"metaphlan3/merged_abundance_table.txt",
+    input:
+        expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+        expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+        "data/multiqc_report.html",
+        "trimmed_data/multiqc_report.html",
+		expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+		"metaphlan3/merged_abundance_table.txt",
 		#"resfinder_db/resfinder.1.bt2",
 		#expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz", sample=SAMPLES, read=["R1", "R2"]),
 		#expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
@@ -31,11 +31,11 @@ rule all:
 		#expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
 		#"resfinder_out/ARG_genemat.txt",
 		#"MGE_db/MGE.1.bt2",
-                #expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
-                #expand("logs/MGE/{sample}.log", sample=SAMPLES),
-                #expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
-                #expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
-                #"MGE_out/MGE_genemat.txt"
+        #expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
+        #expand("logs/MGE/{sample}.log", sample=SAMPLES),
+        #expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
+        #expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
+        #"MGE_out/MGE_genemat.txt"
 
 # Rule to run FastQC on the raw reads for each sample and read
 # The input files are located in the "data" directory and have the pattern:

@@ -1,7 +1,6 @@
-name: QC_env
+name: seqkit_env
 channels:
   - bioconda
   - conda-forge
 dependencies:
-  - fastqc =0.12.1
-  - multiqc =1.14
+  - seqkit =0.12.1
