@@ -2,7 +2,7 @@
 # The input files are located in the "data" directory and have the pattern:
 # {sample}_R1_001.fastq.gz
 # The pattern is used to extract the sample name and store it in the "SAMPLES" variable
-SAMPLES = glob_wildcards("data/{sample}_R1_001.fastq.gz")
+SAMPLES, = glob_wildcards("data/{sample}_R1_001.fastq.gz")
 
 # Define the output files for the pipeline
 # The output files include:
@@ -17,7 +17,7 @@ SAMPLES = glob_wildcards("data/{sample}_R1_001.fastq.gz")
 # - MGE database and BAM files for mapping
 rule all:
 	input:
-		#expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+		expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
         #expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),		
 		#"data/multiqc_report.html",
 		#"trimmed_data/multiqc_report.html",
