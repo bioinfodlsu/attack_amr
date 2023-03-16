@@ -1,9 +1,9 @@
 name: humann3_env
 channels:
-  - biobakery
-  - defaults
-  - bioconda
   - conda-forge
+  - bioconda
+  - biobakery
+  - defaults  
 dependencies:
     - humann =3.0.0.alpha.3
     - python =3.7

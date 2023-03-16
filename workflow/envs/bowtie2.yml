@@ -1,7 +1,7 @@
 name: bowtie2_env
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
 dependencies:
   - bowtie2 =2.4.1
   - samtools =1.9
