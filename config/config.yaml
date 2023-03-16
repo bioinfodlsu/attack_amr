@@ -1,0 +1,70 @@
+# Config file for testdata
+# Here you can specify the paths to the input and output, and other additional parameters.
+# Arguments are specified in a key:value format, do NOT change the key names.
+
+
+#####################
+# Input and output
+#####################
+
+## Reference protein database.
+# It is recommended to provide absolute paths, i.e. beginning with root (/).
+# Else, paths are considered to be relative to SAMAR top-level directory.
+reference_p: testdata/ref.fa
+
+## RNA-seq reads
+# It is recommended to provide absolute paths, i.e. beginning with root (/).
+# Else, paths are considered to be relative to SAMAR top-level directory.
+
+##Uncomment below to change reads file type from fastq (default) to fasta
+#filetype: "fasta"
+
+# import test data from Markannen as test files to test the current workflow.
+reads:
+  sample_1: #Sample 1. You can change the id to something else, but make sure the same id is used in the sample_info specification below.
+    [ testdata/reads_1_1.fastq, testdata/reads_1_2.fastq ] # Do not remove the [ and ]. If paired-end, provide 2 files, separated a comma. If single-end, just 1 file, no comma.
+  sample_2: #Sample 2.
+    [ testdata/reads_2_1.fastq, testdata/reads_2_2.fastq]
+  sample_3: #Sample 3.
+    [ testdata/reads_3_1.fastq, testdata/reads_3_2.fastq]
+  sample_4: #Sample 4.
+    [ testdata/reads_4_1.fastq, testdata/reads_4_2.fastq]
+  sample_5: #Sample 5.
+    [ testdata/reads_5_1.fastq, testdata/reads_5_2.fastq]
+  sample_6: #Sample 6.
+    [ testdata/reads_6_1.fastq, testdata/reads_6_2.fastq]
+
+## Output folder
+# It is recommended to provide absolute paths, i.e. beginning with root (/).
+# Else, paths are considered to be relative to SAMAR top-level directory.
+out_dir: test_output
+
+
+
+
+#####################
+# Training the scoring scheme
+#####################
+
+##Enable/disable scoring scheme training by last-train. Possible values: yes or no. Defaults to yes if unspecified.
+training : "no"
+
+#####################
+# Configuration for differential gene expression analysis with DESeq2
+#####################
+
+## Enable/disable differential expression analysis.
+##Possible values: yes or no.
+##Defaults to "yes" if unspecified, in which case you must specify the "factors", "sample_info", "design" entries below.
+deanalysis : "yes"
+
+#Sample information
+factors: [Treatment] #list of names of the factors/covariates.
+sample_info:
+  sample_1 : [control] #list of names of level of the factors, which the sample corresponds to.
+  sample_2 : [control]
+  sample_3 : [control]
+  sample_4 : [treated]
+  sample_5 : [treated]
+  sample_6 : [treated]
+design: Treatment #formula for the model matrix
