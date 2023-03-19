@@ -1,3 +1,4 @@
 data/
 trimmed_data/
+resfinder_out/
 .snakemake/
