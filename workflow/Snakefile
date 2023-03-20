@@ -148,7 +148,7 @@ rule metaphlan3:
     message:
         "-- Running Metaphlan3 --" # A message to display while the rule is running
     conda:
-        "envs/humann3.yml"
+        "envs/metaphlan.yml"
     threads:
         2
     shell:
@@ -166,7 +166,7 @@ rule metaphlan3_merge:
     message:
         "-- Merging Metaphlan3 results into table --" # A message to display while the rule is running
     conda:
-        "envs/humann3.yml"
+        "envs/metaphlan.yml"
     threads:
         1
     shell:
