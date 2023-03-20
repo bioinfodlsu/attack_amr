@@ -51,7 +51,7 @@ rule fastqc_raw:
     message:
         "-- Quality check of raw data with Fastqc --"
     conda:
-        "envs/fastqcenv.yml"
+        "envs/fastqc.yml"
     threads:
         2
     shell:
