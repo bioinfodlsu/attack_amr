@@ -1,5 +1,11 @@
 .snakemake/
 data/
+logs/
+mapped_reads/
+mapped_reads_MGE/
 metaphlan3/
+MGE_out/
 resfinder_out/
+sorted_reads/
+sorted_reads_MGE/
 trimmed_data/
