@@ -209,7 +209,7 @@ rule resfinder_mapping:
     shell:
         """
         (bowtie2 -x resfinder_db/resfinder -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
-        samtools view -Sb -o > {output}) 2> {log}
+        samtools view -Sb - > {output}) 2> {log}
         """
 
 # Define the rule for filtering reads before sorting
@@ -230,7 +230,7 @@ rule resfinder_filtering:
         samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
         {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
         else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
-        | samtools view -Shu -o > {output}
+        | samtools view -Shu - > {output}
         """
 
 rule resfinder_sorting:
@@ -351,7 +351,7 @@ rule MGE_mapping:
     shell:
         """
         (bowtie2 -x MGE_db/MGE -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
-        samtools view -Sb -o > {output}) 2> {log}
+        samtools view -Sb - > {output}) 2> {log}
         """
 
 rule MGE_filtering:
@@ -370,7 +370,7 @@ rule MGE_filtering:
         samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
         {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
         else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
-        | samtools view -Shu -o > {output}
+        | samtools view -Shu - > {output}
         """
 
 rule MGE_sorting:
