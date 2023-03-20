@@ -1,7 +1,0 @@
-name: QC_env
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - fastqc =0.11.8
-  - multiqc =1.9

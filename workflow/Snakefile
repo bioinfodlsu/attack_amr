@@ -4,7 +4,7 @@
 # The pattern is used to extract the sample name and store it in the "SAMPLES" variable
 SAMPLES, = glob_wildcards("data/{sample}_R1_001.fastq.gz")
 
-print(SAMPLES)
+print(SAMPLES) #PKY
 
 # Define the output files for the pipeline
 # The output files include:
@@ -19,25 +19,25 @@ print(SAMPLES)
 # - MGE database and BAM files for mapping
 rule all:
     input:
-        expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+        #expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+        #"data/multiqc_report.html",
         expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
-        "data/multiqc_report.html",
         "trimmed_data/multiqc_report.html",
-        expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-        "metaphlan3/merged_abundance_table.txt",
-        "resfinder_db/resfinder.1.bt2",
-        expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz", sample=SAMPLES, read=["R1", "R2"]),
-        expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
-        expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
-        expand("sorted_reads/{sample}.bam", sample=SAMPLES),
-        expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
-        "resfinder_out/ARG_genemat.txt",
-        "MGE_db/MGE.1.bt2",
-        expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
-        expand("logs/MGE/{sample}.log", sample=SAMPLES),
-        expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
-        expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
-        "MGE_out/MGE_genemat.txt"
+        #expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+        #"metaphlan3/merged_abundance_table.txt",
+        #"resfinder_db/resfinder.1.bt2",
+        #expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz", sample=SAMPLES, read=["R1", "R2"]),
+        #expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
+        #expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
+        #expand("sorted_reads/{sample}.bam", sample=SAMPLES),
+        #expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
+        #"resfinder_out/ARG_genemat.txt",
+        #"MGE_db/MGE.1.bt2",
+        #expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
+        #expand("logs/MGE/{sample}.log", sample=SAMPLES),
+        #expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
+        #expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
+        #"MGE_out/MGE_genemat.txt"
 
 # Rule to run FastQC on the raw reads for each sample and read
 # The input files are located in the "data" directory and have the pattern:
@@ -51,7 +51,7 @@ rule fastqc_raw:
     message:
         "-- Quality check of raw data with Fastqc --"
     conda:
-        "envs/QC_env.yml"
+        "envs/fastqcenv.yml"
     threads:
         2
     shell:
@@ -70,7 +70,7 @@ rule multiqc_raw:
 		"-- Running MultiQC for raw data --"
 	conda:
 		# Conda environment to be activated before running rule
-		"envs/QC_env.yml"
+		"envs/multiqcenv.yml"
 	threads:
 		# Number of threads to be used for the rule
 		1
@@ -115,7 +115,7 @@ rule fastqc_trim:
 		"-- Quality check of trimmed data with Fastqc --"
 	conda:
 		# Conda environment to be activated before running rule
-		"envs/QC_env.yml"
+		"envs/fastqc.yml"
 	threads:
 		# Number of threads to be used for the rule
 		2
@@ -134,7 +134,7 @@ rule multiqc_trim:
 	message:
 		"-- Running MultiQC for trimmed data--"
 	conda:
-		"envs/QC_env.yml"
+		"envs/multiqc.yml"
 	shell:
 		"multiqc -f --interactive --quiet trimmed_data/ -o trimmed_data/"
 
@@ -190,6 +190,7 @@ rule resfinder_db:
         "bowtie2-build {input.fasta} resfinder_db/resfinder"
 
 # Define the rule for mapping reads to the ResFinder database
+# I think the problem is here, it's not producing a bam file, that's why it's not being read as an input
 rule resfinder_mapping:
     input:
         fw= "trimmed_data/{sample}_R1_trimmed.fastq.gz",
@@ -212,6 +213,7 @@ rule resfinder_mapping:
         """
 
 # Define the rule for filtering reads before sorting
+# the problem is both the previous res_finder_mapping and res_finder_filtering
 rule resfinder_filtering:
     input:
         "mapped_reads/{sample}_unfiltered.bam"
