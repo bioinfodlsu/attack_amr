@@ -25,7 +25,8 @@ $ mamba create -c conda-forge -c bioconda -n snakemake snakemake
 ```
 This creates an isolated enviroment containing the latest Snakemake. To activate it:
 ```
-$ conda activate snakemake
+$ mamba init
+$ mamba activate snakemake
 ```
 To test snakemake installation 
 ```

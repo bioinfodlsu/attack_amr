@@ -1,7 +1,7 @@
 Download Sequence File: (Sample)
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR701/ERR7015395/FH1_S162_R1_001.fastq.gz
 
-Installation:
+Installation: (For testing only)
 mamba install -c bioconda fastqc
 conda create -n multiqcenv
 mamba install -c bioconda multiqc
@@ -11,9 +11,11 @@ conda create -n bowtie2env
 mamba install -c bioconda bowtie2
 mamba install -c bioconda samtools
 conda create -n metaphlanenv
-mamba install -c bioconda -c biobakery -c conda-forge python=3.7 metaphlan
+mamba install -c bioconda -c biobakery -c conda-forge python=3.8 metaphlan
 
 Remove environment:
+conda env list
+conda activate <env>
 conda deactivate
 conda env remove -n <env>
 
