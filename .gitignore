@@ -1,4 +1,5 @@
-data/
-trimmed_data/
-resfinder_out/
 .snakemake/
+data/
+metaphlan3/
+resfinder_out/
+trimmed_data/
