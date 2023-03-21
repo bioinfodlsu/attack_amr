@@ -13,11 +13,11 @@ mamba install -c bioconda samtools
 conda create -n metaphlanenv
 mamba install -c bioconda -c biobakery -c conda-forge python=3.8 metaphlan
 
-Remove environment:
+Remove environment: (Sample)
 conda env list
-conda activate <env>
+conda activate snakemake
 conda deactivate
-conda env remove -n <env>
+conda env remove -n snakemake
 
 Pipeline:
 Snakemake:
