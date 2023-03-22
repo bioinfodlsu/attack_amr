@@ -150,7 +150,7 @@ rule metaphlan3:
 		# "metaphlan --install"
 		# Run Metaphlan3
 		#"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-		"metaphlan --bowtie2db metaphlan3/ {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+		"metaphlan --bowtie2db metaphlan3/ metaphlan3/mpa_vJan21_TOY_CHOCOPhlAnSGB_202103.fna --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fasta > {output.file}"
 
 # Define the rule for merging Metaphlan3 results
 rule metaphlan3_merge:
