@@ -1,0 +1,113 @@
+Download Sequence File: (Sample)
+wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR701/ERR7015395/FH1_S162_R1_001.fastq.gz
+
+Installation: (For testing only)
+mamba install -c bioconda fastqc
+conda create -n multiqcenv
+mamba install -c bioconda multiqc
+conda create -n cutadaptenv
+mamba install -c bioconda cutadapt
+conda create -n bowtie2env
+mamba install -c bioconda bowtie2
+mamba install -c bioconda samtools
+conda create -n metaphlanenv
+mamba install -c bioconda -c biobakery -c conda-forge python=3.8 metaphlan
+
+Remove environment: (Sample)
+conda env list
+conda activate snakemake
+conda deactivate
+conda env remove -n snakemake
+
+Pipeline:
+Snakemake:
+snakemake --use-conda --cores all
+
+fastqc:
+fastqc --quiet -t 2 --outdir data/FASTQC -f fastq data/FH1_S162_R1_001.fastq.gz
+fastqc --quiet -t 2 --outdir data/FASTQC -f fastq data/FH1_S162_R2_001.fastq.gz
+fastqc --quiet -t 2 --outdir trimmed_data/FASTQC -f fastq trimmed_data/FH1_S162_R1_001.fastq.gz
+fastqc --quiet -t 2 --outdir trimmed_data/FASTQC -f fastq trimmed_data/FH1_S162_R2_001.fastq.gz
+
+multiqc:
+multiqc -f --interactive --quiet data/ -o data/
+
+cutadapt:
+cutadapt -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -O 10 -m 30 -q 20 \
+        data/FH1_S162_R1_001.fastq.gz data/FH1_S162_R2_001.fastq.gz -o trimmed_data/FH1_S162_R1_trimmed.fastq.gz -p trimmed_data/FH1_S162_R2_trimmed.fastq.gz > trimmed_data/FH1_S162.trimmed.txt
+
+fastqc_trim:
+fastqc --quiet -t 2 --outdir trimmed_data/FASTQC -f fastq trimmed_data/FH1_S162_R1_trimmed.fastq.gz
+fastqc --quiet -t 2 --outdir trimmed_data/FASTQC -f fastq trimmed_data/FH1_S162_R2_trimmed.fastq.gz
+
+multiqc_trim:
+multiqc -f --interactive --quiet trimmed_data/ -o trimmed_data/
+
+resfinder_db:
+bowtie2-build resfinder_db/resfinder.fasta resfinder_db/resfinder
+
+resfinder_mapping:
+(bowtie2 -x resfinder_db/resfinder -1 trimmed_data/FH1_S162_R1_trimmed.fastq.gz -2 trimmed_data/FH1_S162_R2_trimmed.fastq.gz -p 1 -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
+        samtools view -Sb - > mapped_reads/FH1_S162_unfiltered.bam) 2> logs/bowtie2/FH1_S162.log
+
+resfinder_filtering:
+samtools view -h mapped_reads/FH1_S162_unfiltered.bam | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
+        {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
+        else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
+        | samtools view -Shu - > mapped_reads/FH1_S162.bam
+
+resfinder_sorting:
+samtools sort -T sorted_reads/FH1_S162 \
+	  -O bam mapped_reads/FH1_S162.bam > sorted_reads/FH1_S162.bam
+
+resfinder_indexing:
+samtools index sorted_reads/FH1_S162.bam
+
+combine_results_1:
+samtools idxstats sorted_reads/FH1_S162.bam | grep -v "\*" | cut -f1 > resfinder_out/gene_names
+sed -i '1 i\GENE' resfinder_out/gene_names
+
+combine_results_2:
+samtools idxstats sorted_reads/FH1_S162.bam | grep -v "\*" | cut -f3 > resfinder_out/FH1_S162_counts
+
+combine_results_3:
+sed '1 i\FH1_S162' resfinder_out/FH1_S162_counts > resfinder_out/renamed_FH1_S162_counts
+
+combine_results_4:
+paste resfinder_out/gene_names resfinder_out/renamed_FH1_S162_counts > resfinder_out/ARG_genemat.txt
+
+MGE_db:
+bowtie2-build MGE_db/MGE.fasta MGE_db/MGE
+
+MGE_mapping:
+(bowtie2 -x MGE_db/MGE -1 trimmed_data/FH1_S162_R1_trimmed.fastq.gz -2 trimmed_data/FH1_S162_R2_trimmed.fastq.gz -p 6 -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
+        samtools view -Sb - > mapped_reads_MGE/FH1_S162_unfiltered.bam) 2> logs/MGE/FH1_S162.log
+
+MGE_filtering:
+samtools view -h mapped_reads_MGE/FH1_S162_unfiltered.bam | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
+        {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
+        else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
+        | samtools view -Shu - > mapped_reads_MGE/FH1_S162.bam
+
+MGE_sorting:
+samtools sort -T sorted_reads_MGE/FH1_S162 \
+        -O bam  mapped_reads_MGE/FH1_S162.bam > sorted_reads_MGE/FH1_S162.bam
+
+MGE_indexing:
+samtools index sorted_reads_MGE/FH1_S162.bam
+
+combine_MGE_results_1:
+samtools idxstats sorted_reads_MGE/FH1_S162.bam | grep -v "\*" | cut -f1 > MGE_out/gene_names
+sed -i '1 i\GENE' MGE_out/gene_names
+
+combine_MGE_results_2:
+samtools idxstats sorted_reads_MGE/FH1_S162.bam | grep -v "\*" | cut -f3 > MGE_out/FH1_S162_counts
+
+combine_MGE_results_3:
+sed '1 i\FH1_S162' MGE_out/FH1_S162_counts > MGE_out/renamed_FH1_S162_counts
+
+combine_MGE_results_4:
+paste MGE_out/gene_names MGE_out/renamed_FH1_S162_counts > MGE_out/MGE_genemat.txt
+
+metaphlan3:
+metaphlan trimmed_data/FH1_S162_R1_trimmed.fastq.gz --nproc 2 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt

@@ -1,3 +1,14 @@
-data/
-trimmed_data/
 .snakemake/
+data/
+logs/
+mapped_reads/
+mapped_reads_MGE/
+metaphlan3/
+MGE_db/
+MGE_out/
+resfinder_db/
+resfinder_out/
+sorted_reads/
+sorted_reads_MGE/
+trimmed_data/
+seqdata/

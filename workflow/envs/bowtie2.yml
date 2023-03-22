@@ -3,5 +3,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - bowtie2 =2.4.1
-  - samtools =1.9
+  - bowtie2 =2.5.1
+  - samtools =1.16.1
