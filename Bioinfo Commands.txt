@@ -110,4 +110,4 @@ combine_MGE_results_4:
 paste MGE_out/gene_names MGE_out/renamed_FH1_S162_counts > MGE_out/MGE_genemat.txt
 
 metaphlan3:
-metaphlan trimmed_data/FH1_S162_R1_trimmed.fastq.gz --nproc 2 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt
+metaphlan --bowtie2db metaphlan3/ trimmed_data/FH1_S162_R1_trimmed.fastq.gz --nproc 2 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt
