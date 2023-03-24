@@ -135,7 +135,8 @@ rule multiqc_trim:
 # Define the rule for running Metaphlan3
 rule metaphlan3:
 	input:
-		reads="trimmed_data/{sample}_R1_trimmed.fastq.gz"
+		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz"
+		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz"
 	output:
 		file="metaphlan3/{sample}_profile.txt",
 		bowtie2out="metaphlan3/{sample}.bowtie2.bz2"
@@ -150,7 +151,7 @@ rule metaphlan3:
 		# "metaphlan --install"
 		# Run Metaphlan3
 		#"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-		"metaphlan --bowtie2db metaphlan3/ metaphlan3/mpa_vJan21_TOY_CHOCOPhlAnSGB_202103.fna --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fasta > {output.file}"
+		"metaphlan --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
 
 # Define the rule for merging Metaphlan3 results
 rule metaphlan3_merge:
