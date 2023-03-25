@@ -1,6 +1,23 @@
 Download Sequence File: (Sample)
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR701/ERR7015395/FH1_S162_R1_001.fastq.gz
 
+Downsample sequences: (Sample)
+zcat -c BFH1_S123_R1_trimmed.fastq.gz | head -n 12518768 | gzip > zBFH1_S123_R1_trimmed.fastq.gz
+
+Downsample Metaphlan database: (Sample) SGB vs VSG??
+sudo apt-get update
+sudo apt-get install bzip2
+bunzip2 mpa_vOct22_CHOCOPhlAnSGB_202212_VSG.fna.bz2
+bunzip2 mpa_vOct22_CHOCOPhlAnSGB_202212_SGB.fna.bz2
+head -n 1447453 mpa_vOct22_CHOCOPhlAnSGB_202212_VSG.fna | bzip2 > mpa_vOct22_CHOCOPhlAnSGB_202212_VSG.fna.bz2
+wc -l mpa_vOct22_CHOCOPhlAnSGB_202212_SGB.fna
+head -n 17035287 mpa_vOct22_CHOCOPhlAnSGB_202212_SGB.fna | bzip2 > mpa_vOct22_CHOCOPhlAnSGB_202212.fna.bz2
+conda create -n bowtie2env
+conda activate bowtie2env
+mamba install -c bioconda bowtie2
+cd metaphlan3
+bowtie2-build --large-index mpa_vOct22_CHOCOPhlAnSGB_202212.fna mpa_vOct22_CHOCOPhlAnSGB_202212
+
 Installation: (For testing only)
 mamba install -c bioconda fastqc
 conda create -n multiqcenv
@@ -21,8 +38,10 @@ conda env remove -n snakemake
 
 Pipeline:
 Snakemake:
+conda activate snakemake
 snakemake --use-conda --cores all
 
+Commands: (For testing only)
 fastqc:
 fastqc --quiet -t 2 --outdir data/FASTQC -f fastq data/FH1_S162_R1_001.fastq.gz
 fastqc --quiet -t 2 --outdir data/FASTQC -f fastq data/FH1_S162_R2_001.fastq.gz
@@ -110,4 +129,4 @@ combine_MGE_results_4:
 paste MGE_out/gene_names MGE_out/renamed_FH1_S162_counts > MGE_out/MGE_genemat.txt
 
 metaphlan3:
-metaphlan --bowtie2db metaphlan3/ trimmed_data/FH1_S162_R1_trimmed.fastq.gz --nproc 2 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt
+metaphlan --bowtie2db metaphlan3/ trimmed_data/FH1_S162_R1_trimmed.fastq.gz,trimmed_data/FH1_S162_R2_trimmed.fastq.gz --nproc 6 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt
