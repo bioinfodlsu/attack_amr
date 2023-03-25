@@ -41,6 +41,9 @@ Snakemake:
 conda activate snakemake
 snakemake --use-conda --cores all
 
+Report:
+snakemake --report report.html
+
 Commands: (For testing only)
 fastqc:
 fastqc --quiet -t 2 --outdir data/FASTQC -f fastq data/FH1_S162_R1_001.fastq.gz
