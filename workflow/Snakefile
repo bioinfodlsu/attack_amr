@@ -670,4 +670,4 @@ rule metaxa2_dc:
 	threads:
 		1
 	shell:
-		"metaxa2_dc -o {output} *level_6.txt"
+		"metaxa2_dc -o {output} metaxa2/*level_6.txt"
