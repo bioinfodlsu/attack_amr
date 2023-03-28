@@ -36,13 +36,13 @@ rule all:
 		#"resfinder_out/gene_names",
 		#"resfinder_out/ARG_genemat.txt",
 		#PKY: Uncomment below if using CARD database
-		"card_db/card.1.bt2",
-		expand("mapped_reads_card/{sample}_unfiltered.bam", sample=SAMPLES),
-		expand("logs/card/{sample}.log", sample=SAMPLES),
-		expand("mapped_reads_card/{sample}.bam", sample=SAMPLES),
-		expand("sorted_reads_card/{sample}.bam.bai", sample=SAMPLES),
-		"card_out/gene_names",
-		"card_out/ARG_genemat.txt"
+		#"card_db/card.1.bt2",
+		#expand("mapped_reads_card/{sample}_unfiltered.bam", sample=SAMPLES),
+		#expand("logs/card/{sample}.log", sample=SAMPLES),
+		#expand("mapped_reads_card/{sample}.bam", sample=SAMPLES),
+		#expand("sorted_reads_card/{sample}.bam.bai", sample=SAMPLES),
+		#"card_out/gene_names",
+		#"card_out/ARG_genemat.txt"
 		#"MGE_db/MGE.1.bt2",
 		#expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
 		#expand("logs/MGE/{sample}.log", sample=SAMPLES),
@@ -51,7 +51,8 @@ rule all:
 		#"MGE_out/gene_names",
 		#"MGE_out/MGE_genemat.txt",
 		#expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-		#"metaphlan3/merged_abundance_table.txt"
+		#"metaphlan3/merged_abundance_table.txt",
+		"metaxa2/metaxa_genus.txt"
 
 # PKY: For downsampling sequence data only
 # rule all:
@@ -624,3 +625,36 @@ rule metaphlan3_merge:
 	shell:
 		# Merge Metaphlan3 results into a single table
 		"merge_metaphlan_tables.py {input} > {output}"
+
+rule metaxa2:
+	input:
+		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
+		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz"
+	output:
+		"metaxa2/{sample}.metaxa_ttt_out"
+	message:
+		"-- Running Metaxa2 --"
+	log:
+		"logs/metaxa2/{sample}.log",
+	conda:
+		"envs/metaxa.yml"
+	threads:
+		16
+	shell:
+		"""
+		metaxa2 -1 {input.read1} -2 {input.read2} -f fastq -z gzip -o {output} --align none --graphical F --cpu {threads} --plus \
+		metaxa2_ttt -i metaxa2/{wildcards.sample}.taxonomy.txt -o {output}
+		"""
+rule metaxa2_merge:
+	input:
+		expand("metaxa2/{sample}.metaxa_ttt_out", sample=SAMPLES)
+	output:
+		"metaxa2/metaxa_genus.txt"
+	message:
+		"-- Merging Metaxa2 results into table --"
+	conda:
+		"envs/metaxa.yml"
+	threads:
+		1
+	shell:
+		"metaxa2_dc -o {output} *level_6.txt"
