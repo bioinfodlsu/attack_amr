@@ -1,4 +1,5 @@
 .snakemake/
+bioinformatics/
 data/
 logs/
 mapped_reads/
@@ -8,6 +9,7 @@ MGE_db/
 MGE_out/
 resfinder_db/
 resfinder_out/
+RFiles/
 sorted_reads/
 sorted_reads_MGE/
 trimmed_data/

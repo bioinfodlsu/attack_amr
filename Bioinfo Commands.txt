@@ -1,3 +1,7 @@
+Run Snakemake:
+conda activate snakemake
+snakemake --use-conda --cores all
+
 Download Sequence File: (Sample)
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR701/ERR7015395/FH1_S162_R1_001.fastq.gz
 
@@ -35,11 +39,6 @@ conda env list
 conda activate snakemake
 conda deactivate
 conda env remove -n snakemake
-
-Pipeline:
-Snakemake:
-conda activate snakemake
-snakemake --use-conda --cores all
 
 Report:
 snakemake --report report.html

@@ -2,10 +2,10 @@
 # The input files are located in the "data" directory and have the pattern:
 # {sample}_R1_001.fastq.gz
 # The pattern is used to extract the sample name and store it in the "SAMPLES" variable
+#PKY: Uncomment if using raw data instead of trimmed data
 # (SAMPLES,) = glob_wildcards("data/{sample}_R1_001.fastq.gz")
-# PKY: Use for downsampling or if data files already deleted
+#PKY: Use for downsampling or if raw data files already deleted
 (SAMPLES,) = glob_wildcards("trimmed_data/{sample}_R1_trimmed.fastq.gz")
-
 
 # Define the output files for the pipeline
 # The output files include:
@@ -19,43 +19,45 @@
 # - Sorted BAM files and BAI files for mapping
 # - MGE database and BAM files for mapping
 rule all:
-    input:
-        expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
-        "data/multiqc_report.html",
-        expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz",	sample=SAMPLES,	read=["R1", "R2"]),
-        expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
-        "trimmed_data/multiqc_report.html",
-        "resfinder_db/resfinder.1.bt2",
+	input:
+		#PKY: Uncomment if using raw data instead of trimmed data
+		#expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+		#"data/multiqc_report.html",
+		#expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz",	sample=SAMPLES,	read=["R1", "R2"]),
+		#expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
+		#"trimmed_data/multiqc_report.html",
+		#PKY: Choose either Resfinder or CARD AMR database only
+		#PKY: Uncomment below if using Resfinder database
+		"resfinder_db/resfinder.1.bt2",
 		expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
 		expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
 		expand("mapped_reads/{sample}.bam", sample=SAMPLES),
 		expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
 		"resfinder_out/gene_names",
 		"resfinder_out/ARG_genemat.txt",
-        "card_db/card.1.bt2",
-        expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
-        expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
-        expand("mapped_reads/{sample}.bam", sample=SAMPLES),
-        expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
-        "card_out/gene_names",
-        "card_out/ARG_genemat.txt"
-        "MGE_db/MGE.1.bt2",
-        expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
-        expand("logs/MGE/{sample}.log", sample=SAMPLES),
-        expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
-        expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
-        "MGE_out/gene_names",
-        "MGE_out/MGE_genemat.txt",
-        expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-        "metaphlan3/merged_abundance_table.txt",
+		#PKY: Uncomment below if using CARD database
+		#"card_db/card.1.bt2",
+		#expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
+		#expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
+		#expand("mapped_reads/{sample}.bam", sample=SAMPLES),
+		#expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
+		#"card_out/gene_names",
+		#"card_out/ARG_genemat.txt"
+		"MGE_db/MGE.1.bt2",
+		expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
+		expand("logs/MGE/{sample}.log", sample=SAMPLES),
+		expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
+		expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
+		"MGE_out/gene_names",
+		"MGE_out/MGE_genemat.txt",
+		expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+		"metaphlan3/merged_abundance_table.txt"
 
-
-# PKY: For downsampling only
+# PKY: For downsampling sequence data only
 # rule all:
 # 	input:
 # 		expand("trimmed_data/z{sample}_R1_trimmed.fastq.gz", sample=SAMPLES),
 # 		expand("trimmed_data/z{sample}_R2_trimmed.fastq.gz", sample=SAMPLES)
-
 
 # Rule to run FastQC on the raw reads for each sample and read
 # The input files are located in the "data" directory and have the pattern:
@@ -73,7 +75,6 @@ rule fastqc_raw:
     threads: 2
     shell:
         "fastqc --quiet -t {threads} --outdir data/FASTQC -f fastq {input}"
-
 
 # Rule to run MultiQC on raw data
 rule multiqc_raw:
@@ -98,7 +99,6 @@ rule multiqc_raw:
         # Shell command to be run for the rule
         "multiqc -f --interactive --quiet data/ -o data/"
 
-
 # Rule to run Cutadapt for adapter trimming
 rule cutadapt:
     input:
@@ -117,8 +117,8 @@ rule cutadapt:
         "envs/cutadapt.yml"
     # Number of threads to be used for the rule
     threads: 1
-    shell: "cutadapt -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -O 10 -m 30 -q 20 {input.fw} {input.rv} -o {output.fw} -p {output.rv} > {output.log}"
-
+    shell: 
+		"cutadapt -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -O 10 -m 30 -q 20 {input.fw} {input.rv} -o {output.fw} -p {output.rv} > {output.log}"
 
 # PKY: For downsampling only
 rule downsample_R1:
@@ -135,7 +135,6 @@ rule downsample_R1:
     shell:  #PKY: 12518768 = 10% of #lines of BFH1 (TO DO: move to config)
         "zcat -c {input.read1} | head -n 12518768 | gzip - > {output.read1} || true"
 
-
 # PKY: For downsampling only
 rule downsample_R2:
     input:
@@ -150,7 +149,6 @@ rule downsample_R2:
     threads: 1
     shell:  #PKY: 12518768 = 10% of #lines of BFH1 (TO DO: move to config)
         "zcat -c {input.read2} | head -n 12518768 | gzip - > {output.read2} || true"
-
 
 # Rule to run FastQC on trimmed data
 rule fastqc_trim:
@@ -171,7 +169,6 @@ rule fastqc_trim:
         # Shell command to be run for the rule
         "fastqc --quiet -t {threads} --outdir trimmed_data/FASTQC -f fastq {input}"
 
-
 # Rule to run MultiQC on trimmed data
 rule multiqc_trim:
     input:
@@ -190,43 +187,6 @@ rule multiqc_trim:
         "envs/multiqc.yml"
     shell:
         "multiqc -f --interactive --quiet trimmed_data/ -o trimmed_data/"
-
-
-# Define the rule for running Metaphlan3
-rule metaphlan3:
-    input:
-        read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
-        read2="trimmed_data/{sample}_R2_trimmed.fastq.gz",
-    output:
-        file="metaphlan3/{sample}_profile.txt",
-        bowtie2out="metaphlan3/{sample}.bowtie2.bz2",
-    message:
-        "-- Running Metaphlan3 --"
-    conda:
-        "envs/metaphlan.yml"
-    threads: 6
-    shell:
-        # Install Metaphlan3 if needed
-        # "metaphlan --install"
-        # Run Metaphlan3
-        #"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-        "metaphlan --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-
-
-# Define the rule for merging Metaphlan3 results
-rule metaphlan3_merge:
-    input:
-        expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-    output:
-        "metaphlan3/merged_abundance_table.txt",
-    message:
-        "-- Merging Metaphlan3 results into table --"
-    conda:
-        "envs/metaphlan.yml"
-    threads: 1
-    shell:
-        # Merge Metaphlan3 results into a single table
-        "merge_metaphlan_tables.py {input} > {output}"
 
 # -------------------------- Start of Resfinder Database ----------------------------#
 
@@ -395,10 +355,8 @@ rule card_mapping:
     threads: 6
     shell:
         """
-
         (bowtie2 -x card_db/card -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
         samtools view -Sb - > {output}) 2> {log}
-
         """
 
 
@@ -421,7 +379,6 @@ rule card_filtering:
         | samtools view -Shu - > {output}
         """
 
-
 rule card_sorting:
     input:
         "mapped_reads/{sample}.bam",
@@ -434,7 +391,6 @@ rule card_sorting:
     threads: 6
     shell:
         "samtools sort -T sorted_reads/{wildcards.sample} -O bam {input} > {output}"
-
 
 rule card_indexing:
     input:
@@ -449,7 +405,6 @@ rule card_indexing:
     shell:
         "samtools index {input}"
 
-
 rule combine_results_card_1:
     input:
         "sorted_reads/FH1_S162.bam",
@@ -462,12 +417,9 @@ rule combine_results_card_1:
     threads: 1
     shell:
         """
-
         samtools idxstats {input} | grep -v "\*" | cut -f1 > {output}
         sed -i '1 i\GENE' {output}
-
         """
-
 
 rule combine_results_card_2:
     input:
@@ -482,7 +434,6 @@ rule combine_results_card_2:
     shell:
         'samtools idxstats {input} | grep -v "\*" | cut -f3 > {output}'
 
-
 rule combine_results_card_3:
     input:
         "card_out/{sample}_counts",
@@ -493,7 +444,6 @@ rule combine_results_card_3:
     threads: 1
     shell:
         "sed '1 i\{wildcards.sample}' {input} > {output}"
-
 
 rule combine_results_card_4:
     input:
@@ -522,7 +472,6 @@ rule MGE_db:
     shell:
         "bowtie2-build {input.fasta} MGE_db/MGE"
 
-
 rule MGE_mapping:
     input:
         fw="trimmed_data/{sample}_R1_trimmed.fastq.gz",
@@ -539,12 +488,9 @@ rule MGE_mapping:
     threads: 6
     shell:
         """
-
         (bowtie2 -x MGE_db/MGE -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
         samtools view -Sb - > {output}) 2> {log}
-
         """
-
 
 rule MGE_filtering:
     input:
@@ -558,14 +504,11 @@ rule MGE_filtering:
     threads: 6
     shell:
         """
-
         samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
         {{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
         else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
         | samtools view -Shu - > {output}
-
         """
-
 
 rule MGE_sorting:
     input:
@@ -580,7 +523,6 @@ rule MGE_sorting:
     shell:
         "samtools sort -T sorted_reads_MGE/{wildcards.sample} -O bam {input} > {output}"
 
-
 rule MGE_indexing:
     input:
         "sorted_reads_MGE/{sample}.bam",
@@ -593,7 +535,6 @@ rule MGE_indexing:
     threads: 6
     shell:
         "samtools index {input}"
-
 
 rule combine_MGE_results_1:
     input:
@@ -609,12 +550,9 @@ rule combine_MGE_results_1:
     threads: 1
     shell:
         """
-
         samtools idxstats {input} | grep -v "\*" | cut -f1 > {output}
         sed -i '1 i\GENE' {output}
-
         """
-
 
 rule combine_MGE_results_2:
     input:
@@ -629,9 +567,7 @@ rule combine_MGE_results_2:
     shell:
         """
         samtools idxstats {input} | grep -v "\*" | cut -f3 > {output}
-
         """
-
 
 rule combine_MGE_results_3:
     input:
@@ -644,7 +580,6 @@ rule combine_MGE_results_3:
     shell:
         "sed '1 i\{wildcards.sample}' {input} > {output}"
 
-
 rule combine_MGE_results_4:
     input:
         gene_names="MGE_out/gene_names",
@@ -656,3 +591,38 @@ rule combine_MGE_results_4:
     threads: 1
     shell:
         "paste {input.gene_names} {input.counts} > {output}"
+
+# Define the rule for running Metaphlan3
+rule metaphlan3:
+    input:
+        read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
+        read2="trimmed_data/{sample}_R2_trimmed.fastq.gz",
+    output:
+        file="metaphlan3/{sample}_profile.txt",
+        bowtie2out="metaphlan3/{sample}.bowtie2.bz2",
+    message:
+        "-- Running Metaphlan3 --"
+    conda:
+        "envs/metaphlan.yml"
+    threads: 6
+    shell:
+        # Install Metaphlan3 if needed
+        # "metaphlan --install"
+        # Run Metaphlan3
+        #"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+        "metaphlan --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+
+# Define the rule for merging Metaphlan3 results
+rule metaphlan3_merge:
+    input:
+        expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+    output:
+        "metaphlan3/merged_abundance_table.txt",
+    message:
+        "-- Merging Metaphlan3 results into table --"
+    conda:
+        "envs/metaphlan.yml"
+    threads: 1
+    shell:
+        # Merge Metaphlan3 results into a single table
+        "merge_metaphlan_tables.py {input} > {output}"
