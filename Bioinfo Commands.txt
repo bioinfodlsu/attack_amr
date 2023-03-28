@@ -1,3 +1,7 @@
+Run Snakemake:
+conda activate snakemake
+snakemake --use-conda --cores all
+
 Download Sequence File: (Sample)
 wget ftp://ftp.sra.ebi.ac.uk/vol1/run/ERR701/ERR7015395/FH1_S162_R1_001.fastq.gz
 
@@ -29,6 +33,8 @@ mamba install -c bioconda bowtie2
 mamba install -c bioconda samtools
 conda create -n metaphlanenv
 mamba install -c bioconda -c biobakery -c conda-forge python=3.8 metaphlan
+conda create -n metaxaenv
+mamba install -c bioconda metaxa
 
 Remove environment: (Sample)
 conda env list
@@ -36,10 +42,8 @@ conda activate snakemake
 conda deactivate
 conda env remove -n snakemake
 
-Pipeline:
-Snakemake:
-conda activate snakemake
-snakemake --use-conda --cores all
+Report:
+snakemake --report report.html
 
 Commands: (For testing only)
 fastqc:
@@ -130,3 +134,8 @@ paste MGE_out/gene_names MGE_out/renamed_FH1_S162_counts > MGE_out/MGE_genemat.t
 
 metaphlan3:
 metaphlan --bowtie2db metaphlan3/ trimmed_data/FH1_S162_R1_trimmed.fastq.gz,trimmed_data/FH1_S162_R2_trimmed.fastq.gz --nproc 6 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt
+
+metaxa2:
+metaxa2 -1 trimmed_data/FH1_S162_R1_trimmed.fastq.gz -2 trimmed_data/FH1_S162_R2_trimmed.fastq.gz -f fastq -z gzip -t b -o metaxa2/FH1_S162 --align none --graphical F --cpu 16 --plus
+metaxa2_ttt -i metaxa2/FH1_S162.taxonomy.txt -t b -o metaxa2/FH1_S162
+metaxa2_dc -o metaxa2/metaxa_genus.txt metaxa2/*level_6.txt

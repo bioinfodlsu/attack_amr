@@ -2,8 +2,9 @@
 # The input files are located in the "data" directory and have the pattern:
 # {sample}_R1_001.fastq.gz
 # The pattern is used to extract the sample name and store it in the "SAMPLES" variable
-#(SAMPLES,) = glob_wildcards("data/{sample}_R1_001.fastq.gz")
-#PKY: Use for downsampling or if data files already deleted
+#PKY: Uncomment if using raw data instead of trimmed data
+# (SAMPLES,) = glob_wildcards("data/{sample}_R1_001.fastq.gz")
+#PKY: Use for downsampling or if raw data files already deleted
 (SAMPLES,) = glob_wildcards("trimmed_data/{sample}_R1_trimmed.fastq.gz")
 
 # Define the output files for the pipeline
@@ -19,33 +20,46 @@
 # - MGE database and BAM files for mapping
 rule all:
 	input:
+		#PKY: Uncomment if using raw data instead of trimmed data
 		#expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
 		#"data/multiqc_report.html",
 		#expand("trimmed_data/{sample}_{read}_trimmed.fastq.gz",	sample=SAMPLES,	read=["R1", "R2"]),
 		#expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"]),
 		#"trimmed_data/multiqc_report.html",
-		"resfinder_db/resfinder.1.bt2",
-		expand("mapped_reads/{sample}_unfiltered.bam", sample=SAMPLES),
-		expand("logs/bowtie2/{sample}.log", sample=SAMPLES),
-		expand("mapped_reads/{sample}.bam", sample=SAMPLES),
-		expand("sorted_reads/{sample}.bam.bai", sample=SAMPLES),
-		"resfinder_out/gene_names",
-		"resfinder_out/ARG_genemat.txt",
-		"MGE_db/MGE.1.bt2",
-		expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
-		expand("logs/MGE/{sample}.log", sample=SAMPLES),
-		expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
-		expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
-		"MGE_out/gene_names",
-		"MGE_out/MGE_genemat.txt",
-		expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-		"metaphlan3/merged_abundance_table.txt"
+		#PKY: Choose either Resfinder or CARD AMR database only
+		#PKY: Uncomment below if using Resfinder database
+		#"resfinder_db/resfinder.1.bt2",
+		#expand("mapped_reads_resfinder/{sample}_unfiltered.bam", sample=SAMPLES),
+		#expand("logs/resfinder/{sample}.log", sample=SAMPLES),
+		#expand("mapped_reads_resfinder/{sample}.bam", sample=SAMPLES),
+		#expand("sorted_reads_resfinder/{sample}.bam.bai", sample=SAMPLES),
+		#"resfinder_out/gene_names",
+		#"resfinder_out/ARG_genemat.txt",
+		#PKY: Uncomment below if using CARD database
+		#"card_db/card.1.bt2",
+		#expand("mapped_reads_card/{sample}_unfiltered.bam", sample=SAMPLES),
+		#expand("logs/card/{sample}.log", sample=SAMPLES),
+		#expand("mapped_reads_card/{sample}.bam", sample=SAMPLES),
+		#expand("sorted_reads_card/{sample}.bam.bai", sample=SAMPLES),
+		#"card_out/gene_names",
+		#"card_out/ARG_genemat.txt"
+		#"MGE_db/MGE.1.bt2",
+		#expand("mapped_reads_MGE/{sample}_unfiltered.bam", sample=SAMPLES),
+		#expand("logs/MGE/{sample}.log", sample=SAMPLES),
+		#expand("mapped_reads_MGE/{sample}.bam", sample=SAMPLES),
+		#expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
+		#"MGE_out/gene_names",
+		#"MGE_out/MGE_genemat.txt",
+		#expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+		#"metaphlan3/merged_abundance_table.txt",
+		expand("metaxa2/{sample}.level_6.txt", sample=SAMPLES),
+		"metaxa2/metaxa_genus.txt"
 
-#PKY: For downsampling only
-#rule all:
-#	input:
-#		expand("trimmed_data/z{sample}_R1_trimmed.fastq.gz", sample=SAMPLES),
-#		expand("trimmed_data/z{sample}_R2_trimmed.fastq.gz", sample=SAMPLES)
+# PKY: For downsampling sequence data only
+# rule all:
+# 	input:
+# 		expand("trimmed_data/z{sample}_R1_trimmed.fastq.gz", sample=SAMPLES),
+# 		expand("trimmed_data/z{sample}_R2_trimmed.fastq.gz", sample=SAMPLES)
 
 # Rule to run FastQC on the raw reads for each sample and read
 # The input files are located in the "data" directory and have the pattern:
@@ -53,9 +67,9 @@ rule all:
 # The output files are written to the "data/FASTQC" directory
 rule fastqc_raw:
 	input:
-		"data/{sample}_{read}_001.fastq.gz"
+		"data/{sample}_{read}_001.fastq.gz",
 	output:
-		"data/FASTQC/{sample}_{read}_001_fastqc.zip"
+		"data/FASTQC/{sample}_{read}_001_fastqc.zip",
 	message:
 		"-- Quality check of raw data with Fastqc --"
 	conda:
@@ -68,10 +82,14 @@ rule fastqc_raw:
 rule multiqc_raw:
 	input:
 		# Path to input files for each sample and read
-		expand("data/FASTQC/{sample}_{read}_001_fastqc.zip", sample=SAMPLES, read=["R1", "R2"])
+		expand(
+			"data/FASTQC/{sample}_{read}_001_fastqc.zip",
+			sample=SAMPLES,
+			read=["R1", "R2"],
+		),
 	output:
 		# Path to MultiQC output report
-		"data/multiqc_report.html"
+		"data/multiqc_report.html",
 	message:
 		"-- Running MultiQC for raw data --"
 	conda:
@@ -85,67 +103,61 @@ rule multiqc_raw:
 
 # Rule to run Cutadapt for adapter trimming
 rule cutadapt:
-	input:
-		# Path to forward and reverse read files for each sample
+	input: # Path to forward and reverse read files for each sample
 		fw="data/{sample}_R1_001.fastq.gz",
 		rv="data/{sample}_R2_001.fastq.gz"
-	output:
-		# Path to trimmed output files and log file for each sample
+	output: # Path to trimmed output files and log file for each sample
 		fw="trimmed_data/{sample}_R1_trimmed.fastq.gz",
 		rv="trimmed_data/{sample}_R2_trimmed.fastq.gz",
 		log="trimmed_data/{sample}.trimmed.txt"
 	message:
 		"-- Running Cutadapt --"
-	conda:
-		# Conda environment to be activated before running rule
+	conda: # Conda environment to be activated before running rule
 		"envs/cutadapt.yml"
 	# Number of threads to be used for the rule
-	threads: 1
+	threads:
+		1
 	shell:
-		# Shell command to be run for the rule
-		"cutadapt -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -O 10 -m 30 -q 20 \
-		{input.fw} {input.rv} -o {output.fw} -p {output.rv} > {output.log}"
+		"cutadapt -a CTGTCTCTTATACACATCT -A CTGTCTCTTATACACATCT -O 10 -m 30 -q 20 {input.fw} {input.rv} -o {output.fw} -p {output.rv} > {output.log}"
 
-#PKY: For downsampling only
+# PKY: For downsampling only
 rule downsample_R1:
 	input:
-		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz"
+		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
 	output:
-		read1="trimmed_data/z{sample}_R1_trimmed.fastq.gz"
+		read1="trimmed_data/z{sample}_R1_trimmed.fastq.gz",
 	message:
 		"-- Downsampling Trimmed Data for R1 --"
-	conda:
-		# Conda environment to be activated before running rule
+	conda: # Conda environment to be activated before running rule
 		"envs/downsample.yml"
 	threads:
 		1
-	shell: #PKY: 12518768 = 10% of #lines of BFH1 (TO DO: move to config)
+	shell:  #PKY: 12518768 = 10% of #lines of BFH1 (TO DO: move to config)
 		"zcat -c {input.read1} | head -n 12518768 | gzip - > {output.read1} || true"
 
-#PKY: For downsampling only
+# PKY: For downsampling only
 rule downsample_R2:
 	input:
-		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz"
+		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz",
 	output:
-		read2="trimmed_data/z{sample}_R2_trimmed.fastq.gz"
+		read2="trimmed_data/z{sample}_R2_trimmed.fastq.gz",
 	message:
 		"-- Downsampling Trimmed Data for R2 --"
 	conda:
 		# Conda environment to be activated before running rule
 		"envs/downsample.yml"
-	threads:
-		1
-	shell: #PKY: 12518768 = 10% of #lines of BFH1 (TO DO: move to config)
+	threads: 1
+	shell:  #PKY: 12518768 = 10% of #lines of BFH1 (TO DO: move to config)
 		"zcat -c {input.read2} | head -n 12518768 | gzip - > {output.read2} || true"
 
 # Rule to run FastQC on trimmed data
 rule fastqc_trim:
 	input:
 		# Path to input trimmed read files for each sample and read
-		"trimmed_data/{sample}_{read}_trimmed.fastq.gz"
+		"trimmed_data/{sample}_{read}_trimmed.fastq.gz",
 	output:
 		# Path to FastQC output report for each sample and read
-		"trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip"
+		"trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip",
 	message:
 		"-- Quality check of trimmed data with Fastqc --"
 	conda:
@@ -161,10 +173,14 @@ rule fastqc_trim:
 rule multiqc_trim:
 	input:
 		# Path to input FastQC files for each sample and read
-		expand("trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip", sample=SAMPLES, read=["R1", "R2"])
+		expand(
+			"trimmed_data/FASTQC/{sample}_{read}_trimmed_fastqc.zip",
+			sample=SAMPLES,
+			read=["R1", "R2"],
+		),
 	output:
 		# Path to MultiQC output report for trimmed data
-		"trimmed_data/multiqc_report.html"
+		"trimmed_data/multiqc_report.html",
 	message:
 		"-- Running MultiQC for trimmed data--"
 	conda:
@@ -172,42 +188,7 @@ rule multiqc_trim:
 	shell:
 		"multiqc -f --interactive --quiet trimmed_data/ -o trimmed_data/"
 
-# Define the rule for running Metaphlan3
-rule metaphlan3:
-	input:
-		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
-		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz"
-	output:
-		file="metaphlan3/{sample}_profile.txt",
-		bowtie2out="metaphlan3/{sample}.bowtie2.bz2"
-	message:
-		"-- Running Metaphlan3 --"
-	conda:
-		"envs/metaphlan.yml"
-	threads:
-		6
-	shell:
-		# Install Metaphlan3 if needed
-		# "metaphlan --install"
-		# Run Metaphlan3
-		#"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-		"metaphlan --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-
-# Define the rule for merging Metaphlan3 results
-rule metaphlan3_merge:
-	input:
-		expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES)
-	output:
-		"metaphlan3/merged_abundance_table.txt"
-	message:
-		"-- Merging Metaphlan3 results into table --"
-	conda:
-		"envs/metaphlan.yml"
-	threads:
-		1
-	shell:
-		# Merge Metaphlan3 results into a single table
-		"merge_metaphlan_tables.py {input} > {output}"
+# -------------------------- Start of Resfinder Database ----------------------------#
 
 # Define the rule for creating the ResFinder database
 rule resfinder_db:
@@ -216,7 +197,7 @@ rule resfinder_db:
 	output:
 		indexed_db="resfinder_db/resfinder.1.bt2"
 	message:
-		"-- Creating ResFinder database --"	 # A message to display while the rule is running
+		"-- Creating ResFinder database --"	 
 	conda:
 		"envs/bowtie2.yml"
 	threads: 1
@@ -225,16 +206,15 @@ rule resfinder_db:
 		"bowtie2-build {input.fasta} resfinder_db/resfinder"
 
 # Define the rule for mapping reads to the ResFinder database
-# I think the problem is here, it's not producing a bam file, that's why it's not being read as an input
 rule resfinder_mapping:
 	input:
 		fw="trimmed_data/{sample}_R1_trimmed.fastq.gz",
 		rv="trimmed_data/{sample}_R2_trimmed.fastq.gz",
 		indexed_db="resfinder_db/resfinder.1.bt2"
 	output:
-		"mapped_reads/{sample}_unfiltered.bam"
+		"mapped_reads_resfinder/{sample}_unfiltered.bam"
 	log:
-		"logs/bowtie2/{sample}.log"
+		"logs/resfinder/{sample}.log"
 	message:
 		"-- Mapping reads to ResFinder database and extracting mapped reads --"
 	conda:
@@ -247,12 +227,11 @@ rule resfinder_mapping:
 		"""
 
 # Define the rule for filtering reads before sorting
-# the problem is both the previous res_finder_mapping and res_finder_filtering
 rule resfinder_filtering:
 	input:
-		"mapped_reads/{sample}_unfiltered.bam"
+		"mapped_reads_resfinder/{sample}_unfiltered.bam"
 	output:
-		"mapped_reads/{sample}.bam"
+		"mapped_reads_resfinder/{sample}.bam"
 	message:
 		"-- Filtering reads before sorting --"
 	conda:
@@ -265,24 +244,25 @@ rule resfinder_filtering:
 		else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
 		| samtools view -Shu - > {output}
 		"""
+
 rule resfinder_sorting:
 	input:
-		"mapped_reads/{sample}.bam"
+		"mapped_reads_resfinder/{sample}.bam"
 	output:
-		"sorted_reads/{sample}.bam"
+		"sorted_reads_resfinder/{sample}.bam"
 	message:
 		"-- Sorting reads --"
 	conda:
 		"envs/bowtie2.yml"
 	threads: 6
 	shell:
-		"samtools sort -T sorted_reads/{wildcards.sample} -O bam {input} > {output}"
+		"samtools sort -T sorted_reads_resfinder/{wildcards.sample} -O bam {input} > {output}"
 
 rule resfinder_indexing:
 	input:
-		"sorted_reads/{sample}.bam"
+		"sorted_reads_resfinder/{sample}.bam"
 	output:
-		"sorted_reads/{sample}.bam.bai"
+		"sorted_reads_resfinder/{sample}.bam.bai"
 	message:
 		"-- Indexing mapped reads --"
 	conda:
@@ -293,7 +273,7 @@ rule resfinder_indexing:
 
 rule combine_results_1:
 	input:
-		"sorted_reads/FH1_S162.bam"
+		"sorted_reads_resfinder/FH1_S162.bam"
 	output:
 		"resfinder_out/gene_names"
 	message:
@@ -309,7 +289,7 @@ rule combine_results_1:
 
 rule combine_results_2:
 	input:
-		"sorted_reads/{sample}.bam"
+		"sorted_reads_resfinder/{sample}.bam"
 	output:
 		"resfinder_out/{sample}_counts"
 	message:
@@ -342,12 +322,148 @@ rule combine_results_4:
 	threads: 1
 	shell:
 		"paste {input.gene_names} {input.counts} > {output}"
+# -------------------------- End of Resfinder Database ----------------------------#
+
+# -------------------------- Start of Card Database -------------------------------#
+
+# Define the rule for creating the Card database
+rule card_db:
+	input:
+		fasta="card_db/card.fasta",
+	output:
+		indexed_db="card_db/card.1.bt2",
+	message:
+		"-- Creating Card database --" 
+	conda:
+		"envs/bowtie2.yml"
+	threads: 1
+	shell:
+		"bowtie2-build {input.fasta} card_db/card"
+
+rule card_mapping:
+	input:
+		fw="trimmed_data/{sample}_R1_trimmed.fastq.gz",
+		rv="trimmed_data/{sample}_R2_trimmed.fastq.gz",
+		indexed_db="card_db/card.1.bt2",
+	output:
+		"mapped_reads_card/{sample}_unfiltered.bam",
+	log:
+		"logs/card/{sample}.log",
+	message:
+		"-- Mapping reads to Card database and extracting mapped reads --"
+	conda:
+		"envs/bowtie2.yml"
+	threads: 6
+	shell:
+		"""
+		(bowtie2 -x card_db/card -1 {input.fw} -2 {input.rv} -p {threads} -D 20 -R 3 -N 1 -L 20 -i S,1,0.50 | \
+		samtools view -Sb - > {output}) 2> {log}
+		"""
+
+# Define the rule for filtering reads before sorting
+rule card_filtering:
+	input:
+		"mapped_reads_card/{sample}_unfiltered.bam",
+	output:
+		"mapped_reads_card/{sample}.bam",
+	message:
+		"-- Filtering reads before sorting --"
+	conda:
+		"envs/bowtie2.yml"
+	threads: 6
+	shell:
+		"""
+		samtools view -h {input} | awk 'BEGIN {{FS="\t"; OFS="\t"}} \
+		{{if (/^@/ && substr($2, 3, 1)==":") {{print}} \
+		else if (($7!="=" || $7=="=") && and($2, 0x40)) {{print}}}}' \
+		| samtools view -Shu - > {output}
+		"""
+
+rule card_sorting:
+	input:
+		"mapped_reads_card/{sample}.bam",
+	output:
+		"sorted_reads_card/{sample}.bam",
+	message:
+		"-- Sorting reads --"
+	conda:
+		"envs/bowtie2.yml"
+	threads: 6
+	shell:
+		"samtools sort -T sorted_reads_card/{wildcards.sample} -O bam {input} > {output}"
+
+rule card_indexing:
+	input:
+		"sorted_reads_card/{sample}.bam",
+	output:
+		"sorted_reads_card/{sample}.bam.bai",
+	message:
+		"-- Indexing mapped reads --"
+	conda:
+		"envs/bowtie2.yml"
+	threads: 6
+	shell:
+		"samtools index {input}"
+
+rule combine_results_card_1:
+	input:
+		"sorted_reads_card/FH1_S162.bam",
+	output:
+		"card_out/gene_names",
+	message:
+		"-- Creating gene_names file --"
+	conda:
+		"envs/bowtie2.yml"
+	threads: 1
+	shell:
+		"""
+		samtools idxstats {input} | grep -v "\*" | cut -f1 > {output}
+		sed -i '1 i\GENE' {output}
+		"""
+
+rule combine_results_card_2:
+	input:
+		"sorted_reads_card/{sample}.bam",
+	output:
+		"card_out/{sample}_counts",
+	message:
+		"-- Combine count data into genemat --"
+	conda:
+		"envs/bowtie2.yml"
+	threads: 1
+	shell:
+		'samtools idxstats {input} | grep -v "\*" | cut -f3 > {output}'
+
+rule combine_results_card_3:
+	input:
+		"card_out/{sample}_counts",
+	output:
+		"card_out/renamed_{sample}_counts",
+	message:
+		"-- Adding sample names --"
+	threads: 1
+	shell:
+		"sed '1 i\{wildcards.sample}' {input} > {output}"
+
+rule combine_results_card_4:
+	input:
+		gene_names="card_out/gene_names",
+		counts=expand("card_out/renamed_{sample}_counts", sample=SAMPLES),
+	output:
+		"card_out/ARG_genemat.txt",
+	message:
+		"-- Creating ARG_genemat --"
+	threads: 1
+	shell:
+		"paste {input.gene_names} {input.counts} > {output}"
+
+# -------------------------- End of Card Database -------------------------------#
 
 rule MGE_db:
 	input:
-		fasta="MGE_db/MGE.fasta"
+		fasta="MGE_db/MGE.fasta",
 	output:
-		indexed_db="MGE_db/MGE.1.bt2"
+		indexed_db="MGE_db/MGE.1.bt2",
 	message:
 		"-- MGE db --"
 	conda:
@@ -360,11 +476,11 @@ rule MGE_mapping:
 	input:
 		fw="trimmed_data/{sample}_R1_trimmed.fastq.gz",
 		rv="trimmed_data/{sample}_R2_trimmed.fastq.gz",
-		indexed_db="MGE_db/MGE.1.bt2"
+		indexed_db="MGE_db/MGE.1.bt2",
 	output:
-		"mapped_reads_MGE/{sample}_unfiltered.bam"
+		"mapped_reads_MGE/{sample}_unfiltered.bam",
 	log:
-		"logs/MGE/{sample}.log"
+		"logs/MGE/{sample}.log",
 	message:
 		"-- Mapping w/ MGEs --"
 	conda:
@@ -378,9 +494,9 @@ rule MGE_mapping:
 
 rule MGE_filtering:
 	input:
-		"mapped_reads_MGE/{sample}_unfiltered.bam"
+		"mapped_reads_MGE/{sample}_unfiltered.bam",
 	output:
-		"mapped_reads_MGE/{sample}.bam"
+		"mapped_reads_MGE/{sample}.bam",
 	message:
 		"-- Filtering reads for sorting --"
 	conda:
@@ -396,9 +512,9 @@ rule MGE_filtering:
 
 rule MGE_sorting:
 	input:
-		"mapped_reads_MGE/{sample}.bam"
+		"mapped_reads_MGE/{sample}.bam",
 	output:
-		"sorted_reads_MGE/{sample}.bam"
+		"sorted_reads_MGE/{sample}.bam",
 	message:
 		"-- Sorting reads --"
 	conda:
@@ -409,9 +525,9 @@ rule MGE_sorting:
 
 rule MGE_indexing:
 	input:
-		"sorted_reads_MGE/{sample}.bam"
+		"sorted_reads_MGE/{sample}.bam",
 	output:
-		"sorted_reads_MGE/{sample}.bam.bai"
+		"sorted_reads_MGE/{sample}.bam.bai",
 	message:
 		"-- Indexing mapped reads --"
 	conda:
@@ -424,9 +540,9 @@ rule combine_MGE_results_1:
 	input:
 		#PKY:Why hard-coded? 
 		# "sorted_reads_MGE/BFH1_S123.bam"
-		"sorted_reads_MGE/FH1_S162.bam"
+		"sorted_reads_MGE/FH1_S162.bam",
 	output:
-		"MGE_out/gene_names"
+		"MGE_out/gene_names",
 	message:
 		"-- Creating gene_names file --"
 	conda:
@@ -440,9 +556,9 @@ rule combine_MGE_results_1:
 
 rule combine_MGE_results_2:
 	input:
-		"sorted_reads_MGE/{sample}.bam"
+		"sorted_reads_MGE/{sample}.bam",
 	output:
-		"MGE_out/{sample}_counts"
+		"MGE_out/{sample}_counts",
 	message:
 		"-- Combine count data into genemat --"
 	conda:
@@ -455,9 +571,9 @@ rule combine_MGE_results_2:
 
 rule combine_MGE_results_3:
 	input:
-		"MGE_out/{sample}_counts"
+		"MGE_out/{sample}_counts",
 	output:
-		"MGE_out/renamed_{sample}_counts"
+		"MGE_out/renamed_{sample}_counts",
 	message:
 		"-- Adding sample names --"
 	threads: 1
@@ -467,11 +583,91 @@ rule combine_MGE_results_3:
 rule combine_MGE_results_4:
 	input:
 		gene_names="MGE_out/gene_names",
-		counts=expand("MGE_out/renamed_{sample}_counts", sample=SAMPLES)
+		counts=expand("MGE_out/renamed_{sample}_counts", sample=SAMPLES),
 	output:
-		"MGE_out/MGE_genemat.txt"
+		"MGE_out/MGE_genemat.txt",
 	message:
 		"-- Creating MGE_genemat --"
 	threads: 1
 	shell:
 		"paste {input.gene_names} {input.counts} > {output}"
+
+# Define the rule for running Metaphlan3
+rule metaphlan3:
+	input:
+		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
+		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz",
+	output:
+		file="metaphlan3/{sample}_profile.txt",
+		bowtie2out="metaphlan3/{sample}.bowtie2.bz2",
+	message:
+		"-- Running Metaphlan3 --"
+	conda:
+		"envs/metaphlan.yml"
+	threads: 6
+	shell:
+		# Install Metaphlan3 if needed
+		# "metaphlan --install"
+		# Run Metaphlan3
+		#"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+		"metaphlan -t rel_ab_w_read_stats --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+
+# Define the rule for merging Metaphlan3 results
+rule metaphlan3_merge:
+	input:
+		expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+	output:
+		"metaphlan3/merged_abundance_table.txt",
+	message:
+		"-- Merging Metaphlan3 results into table --"
+	conda:
+		"envs/metaphlan.yml"
+	threads: 1
+	shell:
+		# Merge Metaphlan3 results into a single table
+		"merge_metaphlan_tables.py {input} > {output}"
+
+rule metaxa2:
+	input:
+		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
+		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz"
+	output:
+		"metaxa2/{sample}.taxonomy.txt"
+	message:
+		"-- Running Metaxa2 --"
+	log:
+		"logs/metaxa2/{sample}.log"
+	conda:
+		"envs/metaxa.yml"
+	threads:
+		16
+	shell:
+		"metaxa2 -1 {input.read1} -2 {input.read2} -f fastq -z gzip -t b -o metaxa2/{wildcards.sample} --align none --graphical F --cpu {threads} --plus"
+
+rule metaxa2_ttt:
+	input:
+		"metaxa2/{sample}.taxonomy.txt"
+	output:
+		"metaxa2/{sample}.level_6.txt"
+	message:
+		"-- Running metaxa2_ttt --"
+	conda:
+		"envs/metaxa.yml"
+	threads:
+		1
+	shell:
+		"metaxa2_ttt -i {input} -t b -o metaxa2/{wildcards.sample}"
+
+rule metaxa2_dc:
+	input:
+		expand("metaxa2/{sample}.level_6.txt", sample=SAMPLES)
+	output:
+		"metaxa2/metaxa_genus.txt"
+	message:
+		"-- Run metaxa2_dc to merge all results into a single table --"
+	conda:
+		"envs/metaxa.yml"
+	threads:
+		1
+	shell:
+		"metaxa2_dc -o {output} metaxa2/*level_6.txt"
