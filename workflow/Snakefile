@@ -631,7 +631,8 @@ rule metaxa2:
 		read1="trimmed_data/{sample}_R1_trimmed.fastq.gz",
 		read2="trimmed_data/{sample}_R2_trimmed.fastq.gz"
 	output:
-		"metaxa2/{sample}.metaxa_ttt_out"
+		file1="metaxa2/{sample}.metaxa_ttt_out",
+		file2="metaxa2/{sample}.level_6.txt"
 	message:
 		"-- Running Metaxa2 --"
 	log:
@@ -642,8 +643,8 @@ rule metaxa2:
 		16
 	shell:
 		"""
-		metaxa2 -1 {input.read1} -2 {input.read2} -f fastq -z gzip -o {output} --align none --graphical F --cpu {threads} --plus \
-		metaxa2_ttt -i metaxa2/{wildcards.sample}.taxonomy.txt -o {output}
+		metaxa2 -1 {input.read1} -2 {input.read2} -f fastq -z gzip -o {output.file1} --align none --graphical F --cpu {threads} --plus \
+		metaxa2_ttt -i metaxa2/{wildcards.sample}.taxonomy.txt -o {output.file2}
 		"""
 rule metaxa2_merge:
 	input:
