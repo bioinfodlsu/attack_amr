@@ -35,6 +35,8 @@ conda create -n metaphlanenv
 mamba install -c bioconda -c biobakery -c conda-forge python=3.8 metaphlan
 conda create -n metaxaenv
 mamba install -c bioconda metaxa
+conda create -n cdhitenv
+mamba install -c bioconda cd-hit
 
 Remove environment: (Sample)
 conda env list
@@ -139,3 +141,6 @@ metaxa2:
 metaxa2 -1 trimmed_data/FH1_S162_R1_trimmed.fastq.gz -2 trimmed_data/FH1_S162_R2_trimmed.fastq.gz -f fastq -z gzip -t b -o metaxa2/FH1_S162 --align none --graphical F --cpu 16 --plus
 metaxa2_ttt -i metaxa2/FH1_S162.taxonomy.txt -t b -o metaxa2/FH1_S162
 metaxa2_dc -o metaxa2/metaxa_genus.txt metaxa2/*level_6.txt
+
+cd-hit:
+cd-hit-est -i resfinder.fasta -o clusters_resfinder.fasta -c 0.90

@@ -2,6 +2,7 @@
 bioinformatics/
 card_db/
 card_out/
+cd-hit/
 data/
 logs/
 mapped_reads_resfinder/
