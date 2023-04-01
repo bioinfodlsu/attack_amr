@@ -813,7 +813,7 @@ par(mfrow=c(2,2))
 
 lmtest::bptest(M)  # Breusch-Pagan test
 car::ncvTest(M)  # Breusch-Pagan test
-# There is no heteroscedasticity. 
+# There is no heteroscedasticity.
 
 # Remove outlier
 #df <- df[!(row.names(df) %in% c("FH1_S162")),]
@@ -837,25 +837,25 @@ pvalues
 
 # Save plot
 p <- ggboxplot(df, x = "country", y = "RA", color = "country", palette = c("#1C4731", "#910C28", "#1E88E5"), width=0.3) +
-  stat_pvalue_manual(pvalues, hide.ns = TRUE, size = 8, y.position = 2.5, step.increase = 0.075, label = "p.adj") + 
+  stat_pvalue_manual(pvalues, hide.ns = TRUE, size = 8, y.position = 2.5, step.increase = 0.075, label = "p.adj") +
   theme_bw() +
-  theme(axis.text.x = element_text(size = 16, face = "bold"), 
-        axis.title.x = element_blank(), 
-        axis.text.y = element_text(size = 16), 
-        axis.title.y = element_text(size = 20), legend.position = "none", 
+  theme(axis.text.x = element_text(size = 16, face = "bold"),
+        axis.title.x = element_blank(),
+        axis.text.y = element_text(size = 16),
+        axis.title.y = element_text(size = 20), legend.position = "none",
         plot.subtitle = element_text(size = 24, hjust = 0.5),
         plot.tag = element_text(size = 24, family = "Palatino", face = "bold"),
         text = element_text(family = "Palatino"), aspect.ratio = 1) +
     labs(y = "ARGs/16S rRNA", x = "") +
   guides(color = "none", alpha = "none")
 pl <- p + geom_boxplot(width=0.3, fill = c("#9FBDAE", "#DF7087", "#A7CAE9"), outlier.shape = NA, alpha = 0.5)
-plo <- pl +  geom_jitter(data = subset(df, rownames(df) != "FH1_S162"), aes(x = country, y = RA, color = country), 
+plo <- pl +  geom_jitter(data = subset(df, rownames(df) != "FH1_S162"), aes(x = country, y = RA, color = country),
         size = 7, alpha = 0.7, width = 0.15) + labs(subtitle = "ARGs", tag = 'A')
 ARG_plot <- plo + geom_text_repel(data = subset(df, RA >1  & country == "Finland"), aes(label = name), size = 4, family = "Palatino")
 ```
 ### Relative abundances, MGEs
 ```{r, warning=FALSE, error=FALSE, message=FALSE, results='hide'}
-# Gather data
+#PKY: # Gather data
 # df<-data.frame(RA=sample_sums(MGE_rel_PHY_HWW),
 #                country=as.factor(sample_data(MGE_rel_PHY_HWW)$country),
 #                hospital=as.factor(sample_data(MGE_rel_PHY_HWW)$hospital),
@@ -884,8 +884,8 @@ ARG_plot <- plo + geom_text_repel(data = subset(df, RA >1  & country == "Finland
 # stat.test <- pairwise.wilcox.test(df$RA, df$country,
 #                  p.adjust.method = "BH")
 # stat.test
-
-# Save plot
+# 
+# # Save plot
 # p <- ggboxplot(df, x = "country", y = "RA", color = "country", palette = c("#1C4731", "#910C28", "#1E88E5"), width=0.3) +
 #   theme_bw() +
 #   theme(axis.text.x = element_text(size = 16, face = "bold"), 
@@ -978,7 +978,8 @@ BBBBDDDDD
 BBBBDDDDD
 ####DDDDD
 "
-patch <-ARG_plot + MGE_plot + intI1_plot +
+#PKY: Remove MGE_plot
+patch <-ARG_plot + intI1_plot +
   plot_layout(nrow = 1) + 
   plot_annotation(title = "Sum of the relative abundance") &
   theme(plot.subtitle = element_text(hjust = 0.5),
@@ -1242,8 +1243,8 @@ patch <- a + b + c + d + e + legend + plot_layout(design = design) +
 #patch
 
 # Save plot
-ggsave(filename = "plot10.tiff",
-       width = 16, height = 13, dpi = 300, units = "in", device='tiff', scale = 1)
+#ggsave(filename = "plot10.tiff",
+#       width = 16, height = 13, dpi = 300, units = "in", device='tiff', scale = 1)
 ```
 ### mcr genes
 ```{r}
@@ -1440,8 +1441,8 @@ patch <- a + b + c + d + e + legend + plot_layout(design = design) +
 #patch
 
 # Save plot
-ggsave(filename = "plot11.tiff",
-       width = 16, height = 13, dpi = 300, units = "in", device='tiff', scale = 1)
+#ggsave(filename = "plot11.tiff",
+#       width = 16, height = 13, dpi = 300, units = "in", device='tiff', scale = 1)
 ```
 ## Relative abundance of taxa (Metaphlan3)
 ```{r, warning=FALSE, error=FALSE, message=FALSE, results='hide', fig.show='hide'}
@@ -1481,7 +1482,7 @@ ggsave(filename = "plot12.tiff",
 ## Differentially abundant taxa
 ### Aldex2, with CLR
 ```{r, warning=FALSE, error=FALSE, message=FALSE, results='hide', fig.show='hide'}
-# # BENN-FIN
+#PKY: # BENN-FIN
 # metaphlan_PHY_counts_genus_HWW_Ben_Fin <- subset_samples(metaphlan_PHY_counts_genus_HWW, country == "Benin" | country == "Finland")
 # 
 # conditions <- metaphlan_PHY_counts_genus_HWW_Ben_Fin@sam_data[['country']]
@@ -1661,7 +1662,7 @@ ggsave(filename = "plot12.tiff",
 # 
 # # Save plot
 # #ggsave(filename = "plot.tiff",
-#       width = 16, height = 13, dpi = 300, units = "in", device='tiff', scale = 1)
+# #       width = 16, height = 13, dpi = 300, units = "in", device='tiff', scale = 1)
 ```
 ## Correlation between the normalized counts of ARG & MGE
 ```{r, warning=FALSE, error=FALSE, message=FALSE, results='hide', fig.show='hide'}
@@ -1721,7 +1722,7 @@ ggsave(filename = "plot13.tiff",
 ```
 ## Draw maps
 ```{r, warning=FALSE, error=FALSE, message=FALSE, results='hide', fig.show='hide'}
-# # Plot maps for sample sites in Benin and Burkina Faso
+#PKY: # Plot maps for sample sites in Benin and Burkina Faso
 # world <- ne_countries(scale = "medium", returnclass = "sf")
 # class(world)
 # 
@@ -1794,7 +1795,7 @@ ggsave(filename = "plot13.tiff",
 ```
 ## "Control" samples
 ```{r, warning=FALSE, error=FALSE, message=FALSE, results='hide', fig.show='hide'}
-# # The replicates as controls
+#PKY: # The replicates as controls
 # # BH34A_S98 BH34B_S99
 # # BFH38A_S156 BFH38B_S157
 # # FH7_S168 FH8_S169

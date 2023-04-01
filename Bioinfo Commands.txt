@@ -137,6 +137,17 @@ paste MGE_out/gene_names MGE_out/renamed_FH1_S162_counts > MGE_out/MGE_genemat.t
 metaphlan3:
 metaphlan --bowtie2db metaphlan3/ trimmed_data/FH1_S162_R1_trimmed.fastq.gz,trimmed_data/FH1_S162_R2_trimmed.fastq.gz --nproc 6 --bowtie2out metaphlan3/FH1_S162.bowtie2.bz2 --sample_id FH1_S162 --input_type fastq > metaphlan3/FH1_S162_profile.txt
 
+# to create counts
+merge_metaphlan_tables.py *_profile.txt > metaphlan3_counts_merged_abundance_table.txt
+sed -i 's/_profile//g' metaphlan3_counts_merged_abundance_table.txt
+sed -n '2p' metaphlan3_counts_merged_abundance_table.txt > merged_counts_abundance_table_species.txt
+grep -E "s__" metaphlan3_counts_merged_abundance_table.txt >> merged_counts_abundance_table_species.txt
+tr '|' ';' <merged_counts_abundance_table_species.txt > merged_metaphlan_count_species.txt
+
+# to create tax table
+awk '{print $1}' merged_metaphlan_count_species.txt > tax_table_count_metaphlan3_species
+grep -E "s__" tax_table_count_metaphlan3_species > tax_table_count_metaphlan3_species.txt
+
 metaxa2:
 metaxa2 -1 trimmed_data/FH1_S162_R1_trimmed.fastq.gz -2 trimmed_data/FH1_S162_R2_trimmed.fastq.gz -f fastq -z gzip -t b -o metaxa2/FH1_S162 --align none --graphical F --cpu 16 --plus
 metaxa2_ttt -i metaxa2/FH1_S162.taxonomy.txt -t b -o metaxa2/FH1_S162

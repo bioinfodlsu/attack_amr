@@ -610,11 +610,8 @@ rule metaphlan3:
 		# "metaphlan --install"
 		# Run Metaphlan3
 		#"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-		#PKY: Uncomment for relative abundance
-		#"metaphlan -t rel_ab_w_read_stats --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-		#PKY: Uncomment for count
-		"metaphlan --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-
+		"metaphlan -t rel_ab_w_read_stats --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
+		
 # Define the rule for merging Metaphlan3 results
 rule metaphlan3_merge:
 	input:
