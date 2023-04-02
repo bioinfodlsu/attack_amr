@@ -1,5 +1,4 @@
 .snakemake/
-bioinformatics/
 card_db/
 card_out/
 cd-hit/

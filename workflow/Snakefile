@@ -604,7 +604,7 @@ rule metaphlan3:
 		"-- Running Metaphlan3 --"
 	conda:
 		"envs/metaphlan.yml"
-	threads: 6
+	threads: 16
 	shell:
 		# Install Metaphlan3 if needed
 		# "metaphlan --install"
