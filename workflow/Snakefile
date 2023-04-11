@@ -50,10 +50,10 @@ rule all:
 		#expand("sorted_reads_MGE/{sample}.bam.bai", sample=SAMPLES),
 		#"MGE_out/gene_names",
 		#"MGE_out/MGE_genemat.txt",
-		#expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
-		#"metaphlan3/merged_abundance_table.txt",
-		expand("metaxa2/{sample}.level_6.txt", sample=SAMPLES),
-		"metaxa2/metaxa_genus.txt"
+		expand("metaphlan3/{sample}_profile.txt", sample=SAMPLES),
+		"metaphlan3/merged_abundance_table.txt",
+		#expand("metaxa2/{sample}.level_6.txt", sample=SAMPLES),
+		#"metaxa2/metaxa_genus.txt"
 
 # PKY: For downsampling sequence data only
 # rule all:
@@ -604,14 +604,14 @@ rule metaphlan3:
 		"-- Running Metaphlan3 --"
 	conda:
 		"envs/metaphlan.yml"
-	threads: 6
+	threads: 16
 	shell:
 		# Install Metaphlan3 if needed
 		# "metaphlan --install"
 		# Run Metaphlan3
 		#"metaphlan {input.reads} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
 		"metaphlan -t rel_ab_w_read_stats --bowtie2db metaphlan3/ {input.read1},{input.read2} --nproc {threads} --bowtie2out {output.bowtie2out} --sample_id {wildcards.sample} --input_type fastq > {output.file}"
-
+		
 # Define the rule for merging Metaphlan3 results
 rule metaphlan3_merge:
 	input:
